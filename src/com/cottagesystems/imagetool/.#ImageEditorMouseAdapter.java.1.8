@@ -1,0 +1,296 @@
+/*
+ * ImageEditorMouseAdapter.java
+ *
+ * Created on December 13, 2006, 9:42 AM
+ *
+ * To change this template, choose Tools | Template Manager
+ * and open the template in the editor.
+ */
+
+package com.cottagesystems.imagetool;
+
+import java.awt.Cursor;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.Area;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.event.MouseInputAdapter;
+
+/**
+ *
+ * @author jbf
+ */
+public class ImageEditorMouseAdapter extends MouseInputAdapter implements MouseWheelListener, KeyListener {
+    
+    private ImageEditorPanel editor;
+    
+    public ImageEditorMouseAdapter( ImageEditorPanel editor ) {
+        this.editor= editor;
+        initPopup();
+    }
+    
+    /**
+     * convenient reference for all tools.
+     */
+    Point pressLocation;
+    
+    private interface ToolDelegate {
+        void mousePressed(MouseEvent e);
+        void mouseDragged(MouseEvent e);
+        void mouseReleased(MouseEvent e);
+        void mouseWheelMoved( MouseWheelEvent e );
+    }
+    
+    ToolDelegate tool;
+    int toolButton;
+    
+    class PanDelegate implements ToolDelegate {
+        private Point dragFrom=null;
+        
+        private void doMousePan(final MouseEvent e) {
+            int dx= e.getPoint().x - dragFrom.x;
+            int dy= e.getPoint().y - dragFrom.y;
+            
+            Rectangle rc = editor.getVisibleRect();
+            rc.x -= dx;
+            rc.y -= dy;
+            editor.scrollRectToVisible(rc);
+            
+        }
+        
+        public void mousePressed(MouseEvent e) {
+            dragFrom= e.getPoint();
+            editor.setCursor( new Cursor( Cursor.MOVE_CURSOR ) );
+        }
+        
+        public void mouseDragged(MouseEvent e) {
+            if ( dragFrom!=null ) {
+                doMousePan(e);
+            }
+        }
+        
+        public void mouseReleased(MouseEvent e) {
+            if ( dragFrom!=null ) {
+                doMousePan(e);
+                
+                dragFrom= null;
+                editor.setCursor( null );
+            }
+        }
+        
+        public void mouseWheelMoved(MouseWheelEvent e) {
+        }
+        
+    }
+    
+    class RectangleDelegate implements ToolDelegate {
+        Point startPoint;
+        public void mousePressed(MouseEvent e) {
+            startPoint= e.getPoint();
+        }
+        
+        public void mouseDragged(MouseEvent e) {
+            double scale= editor.getScale();
+            Point p= e.getPoint();
+            Point p0= new Point( (int)( p.x / scale ), (int)( p.y / scale ) );
+            Point p1= new Point( (int)( startPoint.x / scale ), (int)( startPoint.y / scale ) );
+            Rectangle r= new Rectangle( p0 );
+            r.add(p1);
+            editor.setSelection( new Area( r ) );
+        }
+        
+        public void mouseReleased(MouseEvent e) {
+            double scale= editor.getScale();
+            Point p= e.getPoint();
+            Point p0= new Point( (int)( p.x / scale ), (int)( p.y / scale ) );
+            Point p1= new Point( (int)( startPoint.x / scale ), (int)( startPoint.y / scale ) );
+            Rectangle r= new Rectangle( p0 );
+            r.add(p1);
+            editor.setSelection( new Area( r ) );
+        }
+        
+        public void mouseWheelMoved(MouseWheelEvent e) {
+        }
+        
+    }
+    
+    class PaintDelegate implements ToolDelegate {
+        boolean enabled= true;
+        public void mousePressed(MouseEvent e) {
+            if ( enabled ) {
+                editor.initPixelOp();
+                editor.doPaint( e.getPoint() );
+            }
+        }
+        
+        public void mouseDragged(MouseEvent e) {
+            System.err.println(""+e.getButton()+" "+MouseEvent.BUTTON1);
+            if ( enabled ) editor.doPaint( e.getPoint() );
+        }
+        
+        public void mouseReleased(MouseEvent e) {
+            if ( enabled ) {
+                editor.finishPixelOp();
+                editor.repaint();
+            }
+        }
+        
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            enabled= false; // disable further drawing.
+            if ( e.getWheelRotation() < 0 ) {
+                editor.undoPaintOp();
+            } else if ( e.getWheelRotation()> 0 ) {
+                editor.redoPaintOp();
+            }
+        }
+    }
+    
+    JPopupMenu popup;
+    
+    private void initPopup() {
+        popup= new JPopupMenu();
+        popup.add( new JMenuItem( createUndoAction() ) ) ;
+        popup.add( new JMenuItem( createRedoAction() ) ) ;
+        popup.add( new JMenuItem( createCropAction() ) ) ;
+    }
+    
+    private Action createUndoAction() {
+        return new AbstractAction( "Undo" ) {
+            public void actionPerformed( ActionEvent e ) {
+                editor.undo();
+            }
+        };
+    }
+    
+    private Action createRedoAction() {
+        return new AbstractAction( "Redo" ) {
+            public void actionPerformed( ActionEvent e ) {
+                editor.redo();
+            }
+        };
+    }
+    
+    private Action selectAllAction() {
+        return new AbstractAction( "SelectAll" ) {
+            public void actionPerformed( ActionEvent e ) {
+                editor.support.selectAll();
+            }
+        };
+    }
+    
+    private Action createCropAction() {
+      return new AbstractAction( "Crop" ) {
+            public void actionPerformed( ActionEvent e ) {
+                editor.support.crop();
+            }
+        };
+    }
+    
+    public void mouseReleased(MouseEvent e) {
+        super.mouseReleased(e);
+        if ( e.getModifiers()==18 ) {
+            applyCtrlConstraint( e );
+        }
+        if ( tool!=null ) {
+            tool.mouseReleased(e);
+            if ( e.getButton()==toolButton )  tool=null;
+        }
+        
+    }
+    
+    public void mouseExited(MouseEvent e) {
+        super.mouseExited(e);
+    }
+    
+    public void mouseEntered(MouseEvent e) {
+        super.mouseEntered(e);
+    }
+    
+    public void mouseClicked(MouseEvent e) {
+        super.mouseClicked(e);
+    }
+    
+    public void mousePressed(MouseEvent e) {
+        super.mousePressed(e);
+        editor.requestFocus();
+        this.pressLocation= e.getPoint();
+        if ( tool==null ) {
+            if ( e.getButton()==MouseEvent.BUTTON2 ) {
+                tool= new PanDelegate();
+            } else if ( e.getButton()==MouseEvent.BUTTON1 ) {
+                editor.pushState();
+                tool= new PaintDelegate();
+            } else if ( e.getButton()==MouseEvent.BUTTON3 && e.isControlDown() ) {
+                tool= new RectangleDelegate();
+                
+            } else if ( e.getButton()==MouseEvent.BUTTON3 ) {
+                popup.show( editor, e.getX(), e.getY() );
+            }
+            toolButton= e.getButton();
+        }
+        if ( tool!=null ) tool.mousePressed(e);
+    }
+    
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        if ( tool!=null ) {
+            tool.mouseWheelMoved(e);
+        } else {
+            float scale= editor.getScale();
+            scale*= Math.pow( 2, e.getWheelRotation() );
+            editor.setScale(scale);
+        }
+    }
+    
+    public void mouseDragged(MouseEvent e) {
+        super.mouseDragged(e);
+        if ( e.getModifiers()==18 ) { //TODO: constant
+            applyCtrlConstraint( e );
+        } else {
+            pressLocation= e.getPoint();
+        }
+        if ( tool!=null ) tool.mouseDragged(e);
+    }
+    
+    public void mouseMoved(MouseEvent e) {
+        super.mouseMoved(e);
+    }
+    
+    private void applyCtrlConstraint( MouseEvent e ) {
+        double angle= Math.abs( Math.atan( ( e.getY() - pressLocation.getY() ) / (  e.getX() - pressLocation.getX() ) ) * 180 / Math.PI );
+        if ( angle<45 ) e.translatePoint( 0, pressLocation.y-e.getY() );
+        if ( angle>=45 ) e.translatePoint( pressLocation.x- e.getX() , 0 );
+        return;
+    }
+    
+    public void keyTyped(KeyEvent e) {
+        System.err.println("keyTyped: "+e.getKeyCode());
+      /*  if ( e.getKeyCode()==KeyEvent.VK_UNDO || (e.getKeyCode()==KeyEvent.VK_Z && e.getModifiers()==18 ) ) {
+            Object state= editor.getAppHistory().undo();
+            if ( state!=null ) editor.setImage( (BufferedImage)state ); // TODO: momento
+        }*/
+    }
+    
+    public void keyPressed(KeyEvent e) {
+        System.err.println("keyPressed: "+e.getKeyCode()+" modifiers: "+e.getModifiers());
+        if ( e.getKeyCode()==KeyEvent.VK_UNDO || (e.getKeyCode()==KeyEvent.VK_Z && e.getModifiers()==2 ) ) {
+            editor.undo();
+        } else if (  e.getKeyCode()==KeyEvent.VK_UNDO || (e.getKeyCode()==KeyEvent.VK_Y && e.getModifiers()==2 ) ) {
+            editor.redo();
+        } else if ( e.getKeyCode()==KeyEvent.VK_A && e.getModifiers()==2 ) {
+            editor.support.selectAll();
+        }
+    }
+    
+    public void keyReleased(KeyEvent e) {
+        System.err.println("keyReleased: "+e.getKeyCode());
+    }
+}

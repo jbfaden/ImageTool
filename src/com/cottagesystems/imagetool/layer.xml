@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<filesystem>
+    <folder name="Actions">
+        <folder name="Tools">
+            
+            <file name="com-cottagesystems-imagetool-actions-ShowImageEditorAction.instance"/>
+        </folder>
+    </folder>
+    <folder name="Menu">
+        <folder name="Tools">
+            <attr name="org-openide-actions-ToolsAction.instance/com-cottagesystems-imagetool-actions-ShowImageEditorAction.shadow" boolvalue="true"/>
+
+            <file name="sep-1.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+            </file>
+            <attr name="sep-1.instance/Actions/Tools/com-cottagesystems-imagetool-actions-ShowImageEditorAction.shadow" boolvalue="true"/>
+
+            <file name="com-cottagesystems-imagetool-actions-ShowImageEditorAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Tools/com-cottagesystems-imagetool-actions-ShowImageEditorAction.instance"/>
+            </file>
+            <attr name="com-cottagesystems-imagetool-actions-ShowImageEditorAction.shadow/Separator1.instance" boolvalue="true"/>
+
+        </folder>
+    </folder>
+    <folder name="Windows2">
+        <folder name="Components">
+            <file name="ImageEditorTopComponent.settings" url="ImageEditorTopComponentSettings.xml"/>
+        </folder>
+        <folder name="Modes">
+            <folder name="editor">
+                <file name="ImageEditorTopComponent.wstcref" url="ImageEditorTopComponentWstcref.xml"/>
+            </folder>
+        </folder>
+    </folder>
+</filesystem>
