@@ -71,7 +71,6 @@ public final class ImageEditorPanel extends JPanel {
     }
     
     private BufferedImage image;
-    private BufferedImage underImage;
     
     /**
      * shape indicating the pixels that would be affected by the brush.
@@ -79,6 +78,7 @@ public final class ImageEditorPanel extends JPanel {
     private Shape brushOutline= null;
     private Point brushLocation= null;
     
+    @Override
     protected void paintComponent(Graphics g1) {
         Graphics2D g= (Graphics2D)g1;
         
@@ -118,7 +118,7 @@ public final class ImageEditorPanel extends JPanel {
         if ( d.width<c.width ) g.fillRect( d.width, 0, c.width-d.width, c.height );
         if ( d.height<c.height ) g.fillRect( 0, d.height, c.width, c.height-d.height );
         
-            Graphics2D scaleG= (Graphics2D)g.create();
+        Graphics2D scaleG= (Graphics2D)g.create();
         scaleG.scale(getScaleFrac(),getScaleFrac());
         scaleG.drawImage( image, 0, 0, this );
         
@@ -529,16 +529,16 @@ public final class ImageEditorPanel extends JPanel {
     
     Rectangle getBrushDirty() {
         Rectangle dirty= getBrush().getBounds();
+        if ( dirty==null ) return null;
         dirty.x-=1;
         dirty.y-=1;
         dirty.height+=2;
         dirty.width+=2;
-        Point brush= getBrushLocation();
-        if ( dirty==null ) return null;
-        if ( brush==null ) return null;
+        Point brushPosition= getBrushLocation();
+        if ( brushPosition==null ) return null;
         dirty.x *= getScaleFrac();
         dirty.y *= getScaleFrac();
-        dirty.translate( brush.x, brush.y );
+        dirty.translate( brushPosition.x, brushPosition.y );
         dirty.width*= getScaleFrac();
         dirty.height *= getScaleFrac();
         return dirty;

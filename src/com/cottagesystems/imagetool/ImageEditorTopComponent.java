@@ -125,7 +125,7 @@ public final class ImageEditorTopComponent extends TopComponent {
         try {
             //image = ImageIO.read(new URL("http://www.sarahandjeremy.net/%7Ejbf/family/photoServer.php?image=/20060815_bday1/P1010011.JPG&width=500&rotate=0"));
             //image = ImageIO.read(new URL("http://entropymine.com/jason/testbed/pngtrans/rgba8.png"));
-            image = ImageIO.read(new URL("http://entropymine.com/jason/testbed/pngtrans/result_mag.gif"));
+            image = ImageIO.read( ImageEditorTopComponent.class.getResource("/com/cottagesystems/imagetool/resources/badge_ok.png") );
             //image = ImageIO.read(new URL("file:///j:/images/result_mag.png"));
             BufferedImage im1= new BufferedImage( image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB );
             im1.getGraphics().drawImage( image, 0, 0, imageEditorPanel1 );
