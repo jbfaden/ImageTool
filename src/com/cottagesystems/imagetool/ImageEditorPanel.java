@@ -23,15 +23,14 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.Iterator;
 import javax.swing.JPanel;
 
 /**
- *
+ * draws the image and stats about the controls.
  * @author jbf
  */
-public class ImageEditorPanel extends JPanel {
+public final class ImageEditorPanel extends JPanel {
     
     final TexturePaint bgPaint;
     
@@ -47,7 +46,7 @@ public class ImageEditorPanel extends JPanel {
     private RepaintTimerRunnable selectionRunnable;
     protected ImageEditorSupport support;
     
-    private ImageEditorDropTarget dropTarget;
+    private final ImageEditorDropTarget dropTarget;
     
     /** Creates a new instance of ImageEditorPanel */
     public ImageEditorPanel( ) {
@@ -90,10 +89,28 @@ public class ImageEditorPanel extends JPanel {
         
         Dimension d= new Dimension( (int) (image.getWidth()*getScaleFrac()), (int)(image.getHeight()*getScaleFrac()) );
         
-        g.setPaint( bgPaint );
+        Color color0= g.getColor();
+        
+        switch (backgroundTexture) {
+            case checkers:
+                g.setPaint( bgPaint );
+                break;
+            case black:
+                g.setPaint( null );
+                g.setColor( Color.BLACK );
+                break;
+            case white:
+                g.setPaint( null );
+                g.setColor( Color.WHITE );
+                break;
+            default:
+                break;
+        }
+        
         g.fillRect( 0, 0, d.width, d.height );
         
         g.setPaint( null );
+        g.setColor( color0 );
         
         Dimension c= this.getSize();
         
@@ -101,7 +118,7 @@ public class ImageEditorPanel extends JPanel {
         if ( d.width<c.width ) g.fillRect( d.width, 0, c.width-d.width, c.height );
         if ( d.height<c.height ) g.fillRect( 0, d.height, c.width, c.height-d.height );
         
-        Graphics2D scaleG= (Graphics2D)g.create();
+            Graphics2D scaleG= (Graphics2D)g.create();
         scaleG.scale(getScaleFrac(),getScaleFrac());
         scaleG.drawImage( image, 0, 0, this );
         
@@ -149,9 +166,7 @@ public class ImageEditorPanel extends JPanel {
             infoStr= "selection bounds: "+selectionArea.getBounds();
             g.drawString(infoStr, 2, getScaleFrac()*image.getHeight()+15+2 * g.getFontMetrics().getHeight() );
         }
-        
-        
-        
+       
         
     }
     
@@ -177,6 +192,27 @@ public class ImageEditorPanel extends JPanel {
         resetSize();
     }
     
+    public enum BackgroundTextureType {
+        checkers,
+        black,
+        white
+    }
+    
+    private BackgroundTextureType backgroundTexture = BackgroundTextureType.checkers;
+
+    public static final String PROP_BACKGROUNDTEXTURE = "backgroundTexture";
+
+    public BackgroundTextureType getBackgroundTexture() {
+        return backgroundTexture;
+    }
+
+    public void setBackgroundTexture(BackgroundTextureType backgroundTexture) {
+        if ( backgroundTexture==null ) backgroundTexture= BackgroundTextureType.checkers;
+        BackgroundTextureType oldBackgroundTexture = this.backgroundTexture;
+        this.backgroundTexture = backgroundTexture;
+        firePropertyChange(PROP_BACKGROUNDTEXTURE, oldBackgroundTexture, backgroundTexture);
+    }
+
     /**
      * Holds value of property scale.
      */
@@ -197,7 +233,7 @@ public class ImageEditorPanel extends JPanel {
     public void setScale(float scale) {
         float oldScale= this.scale;
         if ( scale< -6.f ) scale=-6.f;
-        if ( scale> 7.f ) scale=7f;
+        if ( scale> 10.f ) scale=10f;
         if ( scale==this.scale ) return;
         this.scale = scale;
         firePropertyChange( "scale", oldScale, scale );
